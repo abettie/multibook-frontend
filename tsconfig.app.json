@@ -1,26 +1,46 @@
 {
   "compilerOptions": {
+    // 以前コンパイルを実行したコードの状態を記録するファイル
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    // どのバージョンでjsを出力するか。動作保証するブラウザのバージョンによって変更する
     "target": "ES2020",
+    // パブリッククラスフィールドをECMAScript準拠の方法で初期化するかどうか
     "useDefineForClassFields": true,
+    // "target"のjsバージョンに含まれない組み込みライブラリを指定
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // 出力するjsのモジュールの仕組みとして何を使用するかを指定
     "module": "ESNext",
+    // *.d.tsファイルに対する型チェックをスキップするかどうか
     "skipLibCheck": true,
 
     /* Bundler mode */
+    // import文の解決方法を指定
     "moduleResolution": "bundler",
+    // importのパス名に.tsを許可
     "allowImportingTsExtensions": true,
+    // 各ファイルを独立して変換する際に、解釈できないコードがある場合に警告する
     "isolatedModules": true,
+    // ファイルがスクリプトかモジュール化を判断する方法を指定
+    // "force"を指定すると、全ての非宣言ファイルがモジュールとして解釈される
     "moduleDetection": "force",
+    // js, js.mapファイルを生成しない
     "noEmit": true,
+    // JSXの変換方法を指定。
+    // "react-jsx"を指定すると、React.createElementを使用しないJSX変換(__jsx)を行う
     "jsx": "react-jsx",
 
     /* Linting */
+    // 厳密な型チェックを行う
     "strict": true,
+    // 使われていない変数を禁止する
     "noUnusedLocals": true,
+    // 使われていない引数を禁止する
     "noUnusedParameters": true,
+    // switch文で、caseをbreakやreturnで終えていることを必須にする
     "noFallthroughCasesInSwitch": true,
+    // サイドエフェクトインポートの時にファイルが取得できない場合にエラーを発生させる
     "noUncheckedSideEffectImports": true
   },
+  // コンパイル対象
   "include": ["src"]
 }
