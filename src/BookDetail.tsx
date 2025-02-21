@@ -1,4 +1,4 @@
-import { Box, CardMedia, Container, Grid2, Paper, Typography } from "@mui/material";
+import { Box, CardMedia, Container, Grid2, Modal, Paper, Typography } from "@mui/material";
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -57,6 +57,7 @@ function BookDetail() {
   const [itemName, setItemName] = useState('');
   const [itemExplanation, setItemExplanation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (book.items.length === 0) {
@@ -122,6 +123,14 @@ function BookDetail() {
     setImageIndex(0);
   }
 
+  const handleModalOpen = () => setModalOpen(true);
+  const handleModalClose = () => setModalOpen(false);
+
+  const handleClickItem = (index: number) => {
+    setItemIndex(index);
+    setModalOpen(false);
+  }
+
   return (
     <Container maxWidth='sm'>
       <Grid2 container spacing={1} justifyContent={`space-between`}>
@@ -140,6 +149,7 @@ function BookDetail() {
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
           <MenuIcon 
+            onClick={handleModalOpen}
             sx={{ cursor: 'pointer' }}
           />
         </Grid2>
@@ -209,6 +219,41 @@ function BookDetail() {
         </Grid2>
         <Grid2 size={`auto`}></Grid2>
       </Grid2>
+      <Modal
+        open={modalOpen}
+        onClose={handleModalClose}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '90%',
+            maxHeight: '90%',
+            bgcolor: 'background.paper',
+            border: '2px solid #000',
+            p: 2,
+            overflow: 'auto',
+          }}>
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            アイテム一覧
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            {book.items.map((item, index) => (
+              <Box key={index} sx={{ mt: 1, cursor: 'pointer' }} 
+                onClick={() => handleClickItem(index)} 
+              >
+                <Typography variant="body1">
+                  {item.name}
+                </Typography>
+              </Box>
+            ))}
+          </Typography>
+        </Box>
+      </Modal>
     </Container>
   );
 }
