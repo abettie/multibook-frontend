@@ -3,10 +3,11 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 function BookDetail() {
   const navigate = useNavigate();
+  const { bookId } = useParams<{ bookId: string }>();
 
   function getBookImages(id: number) {
     return [
@@ -60,6 +61,7 @@ function BookDetail() {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
+    console.log('bookId:', bookId);
     if (book.items.length === 0) {
       setItemName('アイテム無し');
       setItemExplanation('アイテムがありません');

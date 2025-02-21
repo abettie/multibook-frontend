@@ -16,7 +16,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<BookList />} />
-          <Route path="/books/:id" element={<BookDetail />} />
+          <Route path="/books/:bookId" element={<BookDetail />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
