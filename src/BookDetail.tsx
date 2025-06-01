@@ -4,88 +4,68 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import MenuIcon from '@mui/icons-material/Menu';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
+import { noImageUrl, loadingImageUrl } from "./Const";
 
 function BookDetail() {
   const navigate = useNavigate();
   const { bookId } = useParams<{ bookId: string }>();
 
-  function getBookImages(id: number) {
-    return [
-      { id: 1, url: 'https://placehold.jp/df8734/ffffff/800x800.png?text=Img' + id + '_1' },
-      { id: 2, url: 'https://placehold.jp/8df734/ffffff/200x800.png?text=Img' + id + '_2' },
-      { id: 3, url: 'https://placehold.jp/87df34/ffffff/800x200.png?text=Img' + id + '_3' },
-      { id: 4, url: 'https://placehold.jp/873df4/ffffff/200x200.png?text=Img' + id + '_4' },
-      { id: 5, url: 'https://placehold.jp/8734df/ffffff/80x80.png?text=Img' + id + '_5' },
-    ];
-  } 
-
   const initialBook = {
-    name: '犬図鑑',
+    id: 1,
+    name: 'データ取得中',
+    thumbnail: undefined,
+    kinds: [],
     items: [
       {
         id: 1,
-        name: 'ゴールデンレトリバー',
-        kind_id: 1,
-        kind_name: '大型犬',
-        explanation: 'ゴールデンレトリバーは、イギリスで生まれた犬種です。性格はおおらかで、人懐っこい性格が特徴です。',
-        images: getBookImages(1)
-      },
-      {
-        id: 2,
-        name: 'チワワ',
-        kind_id: 2,
-        kind_name: '小型犬',
-        explanation: 'チワワは、メキシコ原産の犬種です。体が小さく、飼い主に対して忠実な性格が特徴です。',
-        images: getBookImages(2)
-      },
-      {
-        id: 3,
-        name: 'トイプードル',
-        kind_id: 2,
-        kind_name: '小型犬',
-        explanation: 'トイプードルは、フランス原産の犬種です。知的で飼い主に忠実な性格が特徴です。',
-        images: getBookImages(3)
+        book_id: 1,
+        name: 'しばらくお待ちください',
+        kind_id: null,
+        explanation: 'しばらくお待ちください',
+        images: [{
+          id: 1,
+          item_id: 1,
+          file_name: noImageUrl
+        }]
       }
     ]
   }
 
-  const noImageUrl = 'https://placehold.jp/999999/ffffff/800x800.png?text=NoImage';
-  const loadingImageUrl = '/loading_1.png';
-  const [book] = useState(initialBook);
+  const [book, setBook] = useState(initialBook);
   const [itemIndex, setItemIndex] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
-  const [imageUrl, setImageUrl] = useState(noImageUrl);
-  const [itemName, setItemName] = useState('');
-  const [itemExplanation, setItemExplanation] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    console.log('bookId:', bookId);
-    if (book.items.length === 0) {
-      setItemName('アイテム無し');
-      setItemExplanation('アイテムがありません');
-      setImageUrl(noImageUrl);
-    } else {
-      setItemName(book.items[itemIndex].name);
-      if (book.items[itemIndex].explanation === '') {
-        setItemExplanation('説明無し');
-      } else {
-        setItemExplanation(book.items[itemIndex].explanation);
-      }
-      if (book.items[itemIndex].images.length === 0) {
-        setImageUrl(noImageUrl);
-      } else {
-        setIsLoading(true);
-        const img = new Image();
-        img.src = book.items[itemIndex].images[imageIndex].url;
-        img.onload = () => {
-          setImageUrl(book.items[itemIndex].images[imageIndex].url);
-          setIsLoading(false);
-        };
+    const fetchBook = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`http://localhost:8000/api/books/${bookId}`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        if (!data || !data.items || data.items.length === 0) {
+          console.warn('No items found in the book data');
+          data.items = [{
+            id: 1,
+            book_id: 1,
+            name: 'アイテムがありません。',
+            kind_id: null,
+            explanation: 'この図鑑にはまだアイテムが登録されていません。',
+            images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
+          }];
+        }
+        setBook(data);
+      } catch (error) {
+        console.error('Error fetching book:', error);
+      } finally {
+        setIsLoading(false);
       }
     }
-  }, [book, itemIndex, imageIndex, noImageUrl]);
+    fetchBook();
+  }, [bookId]);
 
   function handleClickBackUrl() {
     navigate('/');
@@ -168,7 +148,11 @@ function BookDetail() {
             {!isLoading && (
               <CardMedia
                 component={'img'}
-                image={imageUrl}
+                image={
+                  book.items[itemIndex].images.length === 0
+                    ? noImageUrl
+                    : book.items[itemIndex].images[imageIndex].file_name
+                }
                 sx={{ objectFit: 'scale-down', objectPosition: 'center', maxWidth: '100%', maxHeight: '100%', margin: 'auto'
                 }}
               />
@@ -199,7 +183,7 @@ function BookDetail() {
         <Grid2 size={9} alignContent={`center`}>
           <Paper>
             <Typography variant='body1' align="center">
-              {itemName}
+              {book.items[itemIndex].name || 'No Name'}
             </Typography>
           </Paper>
         </Grid2>
@@ -215,7 +199,7 @@ function BookDetail() {
         <Grid2 size={9}>
           <Paper sx={{ mt: 2 }}>
             <Typography variant='body2' align="center">
-              {itemExplanation}
+              {book.items[itemIndex].explanation || 'No Explanation'}
             </Typography>
           </Paper>
         </Grid2>
