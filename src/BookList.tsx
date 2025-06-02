@@ -1,28 +1,21 @@
 import { useState, useEffect } from "react";
 import { noThumbnailUrl } from "./Const";
-
-// SVGアイコン
-const PlusIcon = () => (
-  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" stroke="#1976d2" fill="#fff"/>
-    <line x1="12" y1="8" x2="12" y2="16" stroke="#1976d2"/>
-    <line x1="8" y1="12" x2="16" y2="12" stroke="#1976d2"/>
-  </svg>
-);
-const EditIcon = () => (
-  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="17" width="18" height="4" rx="2" fill="#eee"/>
-    <path d="M15.5 6.5l2 2L8 18H6v-2L15.5 6.5z" stroke="#1976d2" fill="#fff"/>
-    <path d="M17.5 4.5a1.414 1.414 0 0 1 2 2l-1 1-2-2 1-1z" fill="#1976d2"/>
-  </svg>
-);
-const ImageIcon = () => (
-  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="3" width="18" height="18" rx="3" fill="#fff" stroke="#1976d2"/>
-    <circle cx="8" cy="8" r="2" fill="#1976d2"/>
-    <path d="M21 21l-6-6-4 4-7-7" stroke="#1976d2"/>
-  </svg>
-);
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  IconButton,
+  Stack,
+  Avatar,
+  Tooltip,
+} from "@mui/material";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import EditIcon from "@mui/icons-material/Edit";
+import ImageIcon from "@mui/icons-material/Image";
 
 function BookList() {
   type Kind = { id: number | null; name: string };
@@ -100,173 +93,189 @@ function BookList() {
   };
 
   return (
-    <div>
+    <Box sx={{ maxWidth: 600, mx: "auto", mt: 4 }}>
       {/* 図鑑追加ボタン（アイコン） */}
-      <button
-        onClick={() => setShowAddModal(true)}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          marginBottom: 16,
-          display: "flex",
-          alignItems: "center"
-        }}
-        aria-label="図鑑追加"
-        title="図鑑追加"
-      >
-        <PlusIcon />
-      </button>
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+        <Tooltip title="図鑑追加">
+          <IconButton color="primary" onClick={() => setShowAddModal(true)}>
+            <AddCircleIcon fontSize="large" />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
       {/* 図鑑追加モーダル */}
-      {showAddModal && (
-        <div className="modal">
-          <h2>図鑑追加</h2>
-          <label>
-            図鑑名:
-            <input
+      <Dialog open={showAddModal} onClose={() => setShowAddModal(false)}>
+        <DialogTitle>図鑑追加</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="図鑑名"
               value={addForm.name}
               onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
+              fullWidth
+              autoFocus
             />
-          </label>
-          <div>
-            <label>種別:</label>
-            {addForm.kinds.map((kind, idx) => (
-              <div key={idx}>
-                <input
-                  value={kind}
-                  onChange={e => {
-                    const kinds = [...addForm.kinds];
-                    kinds[idx] = e.target.value;
-                    setAddForm(f => ({ ...f, kinds }));
-                  }}
-                />
-                <button onClick={() => setAddForm(f => ({ ...f, kinds: f.kinds.filter((_, i) => i !== idx) }))} disabled={addForm.kinds.length === 1}>削除</button>
-              </div>
-            ))}
-            <button onClick={() => setAddForm(f => ({ ...f, kinds: [...f.kinds, ""] }))}>種別追加</button>
-          </div>
-          <button onClick={() => setShowAddModal(false)}>キャンセル</button>
-          <button onClick={handleAddSubmit}>送信</button>
-        </div>
-      )}
+            <Box>
+              <Box sx={{ mb: 1, fontSize: 14, color: "text.secondary" }}>種別</Box>
+              <Stack spacing={1}>
+                {addForm.kinds.map((kind, idx) => (
+                  <Box key={idx} sx={{ display: "flex", alignItems: "center" }}>
+                    <TextField
+                      value={kind}
+                      onChange={e => {
+                        const kinds = [...addForm.kinds];
+                        kinds[idx] = e.target.value;
+                        setAddForm(f => ({ ...f, kinds }));
+                      }}
+                      size="small"
+                      sx={{ flex: 1 }}
+                    />
+                    <Button
+                      onClick={() => setAddForm(f => ({ ...f, kinds: f.kinds.filter((_, i) => i !== idx) }))}
+                      disabled={addForm.kinds.length === 1}
+                      color="error"
+                      sx={{ ml: 1, minWidth: 0, px: 1 }}
+                    >削除</Button>
+                  </Box>
+                ))}
+                <Button
+                  onClick={() => setAddForm(f => ({ ...f, kinds: [...f.kinds, ""] }))}
+                  sx={{ mt: 1, minWidth: 0, px: 1 }}
+                >種別追加</Button>
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowAddModal(false)}>キャンセル</Button>
+          <Button onClick={handleAddSubmit} variant="contained">送信</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 図鑑編集モーダル */}
-      {showEditModal && (
-        <div className="modal">
-          <h2>図鑑編集</h2>
-          <label>
-            図鑑名:
-            <input
+      <Dialog open={showEditModal} onClose={() => setShowEditModal(false)}>
+        <DialogTitle>図鑑編集</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="図鑑名"
               value={editForm.name}
               onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+              fullWidth
+              autoFocus
             />
-          </label>
-          <div>
-            <label>種別:</label>
-            {editForm.kinds.map((kind, idx) => (
-              <div key={idx}>
-                <input
-                  value={kind.name}
-                  onChange={e => {
-                    const kinds = [...editForm.kinds];
-                    kinds[idx].name = e.target.value;
-                    setEditForm(f => ({ ...f, kinds }));
-                  }}
-                />
-                <button onClick={() => setEditForm(f => ({ ...f, kinds: f.kinds.filter((_, i) => i !== idx) }))} disabled={editForm.kinds.length === 1}>削除</button>
-              </div>
-            ))}
-            <button onClick={() => setEditForm(f => ({ ...f, kinds: [...f.kinds, { id: null, name: "" }] }))}>種別追加</button>
-          </div>
-          <button onClick={() => setShowEditModal(false)}>キャンセル</button>
-          <button onClick={handleEditSubmit}>送信</button>
-        </div>
-      )}
+            <Box>
+              <Box sx={{ mb: 1, fontSize: 14, color: "text.secondary" }}>種別</Box>
+              <Stack spacing={1}>
+                {editForm.kinds.map((kind, idx) => (
+                  <Box key={idx} sx={{ display: "flex", alignItems: "center" }}>
+                    <TextField
+                      value={kind.name}
+                      onChange={e => {
+                        const kinds = [...editForm.kinds];
+                        kinds[idx].name = e.target.value;
+                        setEditForm(f => ({ ...f, kinds }));
+                      }}
+                      size="small"
+                      sx={{ flex: 1 }}
+                    />
+                    <Button
+                      onClick={() => setEditForm(f => ({ ...f, kinds: f.kinds.filter((_, i) => i !== idx) }))}
+                      disabled={editForm.kinds.length === 1}
+                      color="error"
+                      sx={{ ml: 1, minWidth: 0, px: 1 }}
+                    >削除</Button>
+                  </Box>
+                ))}
+                <Button
+                  onClick={() => setEditForm(f => ({ ...f, kinds: [...f.kinds, { id: null, name: "" }] }))}
+                  sx={{ mt: 1, minWidth: 0, px: 1 }}
+                >種別追加</Button>
+              </Stack>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowEditModal(false)}>キャンセル</Button>
+          <Button onClick={handleEditSubmit} variant="contained">送信</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* サムネイル更新モーダル */}
-      {showThumbnailModal && (
-        <div className="modal">
-          <h2>サムネイル画像更新</h2>
+      <Dialog open={showThumbnailModal} onClose={() => setShowThumbnailModal(false)}>
+        <DialogTitle>サムネイル画像更新</DialogTitle>
+        <DialogContent>
           <input
             type="file"
             accept="image/*"
             onChange={e => setThumbnailForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))}
+            style={{ marginTop: 8 }}
           />
-          <button onClick={() => setShowThumbnailModal(false)}>キャンセル</button>
-          <button onClick={handleThumbnailSubmit} disabled={!thumbnailForm.file}>送信</button>
-        </div>
-      )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowThumbnailModal(false)}>キャンセル</Button>
+          <Button onClick={handleThumbnailSubmit} disabled={!thumbnailForm.file} variant="contained">送信</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* 図鑑リスト */}
-      <div>
+      <Stack spacing={1}>
         {books.map((book) => (
-          <div
+          <Box
             key={book.id}
-            style={{
+            sx={{
               display: "flex",
               alignItems: "center",
-              padding: "8px 0",
-              borderBottom: "1px solid #eee"
+              p: 1,
+              borderBottom: "1px solid #eee",
+              bgcolor: "#fff",
+              borderRadius: 1,
             }}
           >
-            <img
+            <Avatar
               src={book.thumbnail || noThumbnailUrl}
               alt="thumbnail"
-              style={{
+              sx={{
                 width: 48,
                 height: 48,
-                objectFit: "cover",
-                borderRadius: 8,
-                marginRight: 16,
+                mr: 2,
+                bgcolor: "#fafafa",
                 border: "1px solid #ccc",
-                background: "#fafafa"
               }}
+              variant="rounded"
             />
-            <div style={{ flex: 1, fontSize: 18, fontWeight: 500 }}>{book.name}</div>
-            {/* サムネイル更新ボタン（アイコン） */}
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                marginRight: 8,
-                padding: 4
-              }}
-              onClick={() => {
-                setThumbnailForm({ id: book.id, file: null });
-                setShowThumbnailModal(true);
-              }}
-              aria-label="サムネイル更新"
-              title="サムネイル更新"
-            >
-              <ImageIcon />
-            </button>
-            {/* 編集ボタン（アイコン） */}
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: 4
-              }}
-              onClick={() => {
-                setEditForm({
-                  id: book.id,
-                  name: book.name,
-                  kinds: (book.kinds ?? [{ id: null, name: "" }]).map((k: Kind) => ({ id: k.id, name: k.name }))
-                });
-                setShowEditModal(true);
-              }}
-              aria-label="編集"
-              title="編集"
-            >
-              <EditIcon />
-            </button>
-          </div>
+            <Box sx={{ flex: 1, fontSize: 18, fontWeight: 500 }}>{book.name}</Box>
+            <Tooltip title="サムネイル更新">
+              <IconButton
+                color="primary"
+                onClick={() => {
+                  setThumbnailForm({ id: book.id, file: null });
+                  setShowThumbnailModal(true);
+                }}
+                sx={{ mr: 1 }}
+              >
+                <ImageIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="編集">
+              <IconButton
+                color="primary"
+                onClick={() => {
+                  setEditForm({
+                    id: book.id,
+                    name: book.name,
+                    kinds: (book.kinds ?? [{ id: null, name: "" }]).map((k: Kind) => ({ id: k.id, name: k.name }))
+                  });
+                  setShowEditModal(true);
+                }}
+              >
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         ))}
-      </div>
-    </div>
+      </Stack>
+    </Box>
   );
 }
 
