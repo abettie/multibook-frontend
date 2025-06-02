@@ -16,6 +16,7 @@ import {
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import EditIcon from "@mui/icons-material/Edit";
 import ImageIcon from "@mui/icons-material/Image";
+import { useNavigate } from "react-router";
 
 function BookList() {
   type Kind = { id: number | null; name: string };
@@ -31,6 +32,7 @@ function BookList() {
   const [addForm, setAddForm] = useState({ name: "", kinds: [""] });
   const [editForm, setEditForm] = useState({ id: null as number | null, name: "", kinds: [{ id: null as number | null, name: "" }] });
   const [thumbnailForm, setThumbnailForm] = useState({ id: null as number | null, file: null as File | null });
+  const navigate = useNavigate();
 
   const fetchBooks = async () => {
     try {
@@ -241,10 +243,23 @@ function BookList() {
                 mr: 2,
                 bgcolor: "#fafafa",
                 border: "1px solid #ccc",
+                cursor: "pointer"
               }}
               variant="rounded"
+              onClick={() => navigate(`/books/${book.id}`)}
             />
-            <Box sx={{ flex: 1, fontSize: 18, fontWeight: 500 }}>{book.name}</Box>
+            <Box
+              sx={{
+                flex: 1,
+                fontSize: 18,
+                fontWeight: 500,
+                cursor: "pointer",
+                userSelect: "none"
+              }}
+              onClick={() => navigate(`/books/${book.id}`)}
+            >
+              {book.name}
+            </Box>
             <Tooltip title="サムネイル更新">
               <IconButton
                 color="primary"
