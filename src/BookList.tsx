@@ -1,7 +1,28 @@
 import { useState, useEffect } from "react";
-import BookRow from "./BookRow";
 import { noThumbnailUrl } from "./Const";
 
+// SVGアイコン
+const PlusIcon = () => (
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" stroke="#1976d2" fill="#fff"/>
+    <line x1="12" y1="8" x2="12" y2="16" stroke="#1976d2"/>
+    <line x1="8" y1="12" x2="16" y2="12" stroke="#1976d2"/>
+  </svg>
+);
+const EditIcon = () => (
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="17" width="18" height="4" rx="2" fill="#eee"/>
+    <path d="M15.5 6.5l2 2L8 18H6v-2L15.5 6.5z" stroke="#1976d2" fill="#fff"/>
+    <path d="M17.5 4.5a1.414 1.414 0 0 1 2 2l-1 1-2-2 1-1z" fill="#1976d2"/>
+  </svg>
+);
+const ImageIcon = () => (
+  <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="3" fill="#fff" stroke="#1976d2"/>
+    <circle cx="8" cy="8" r="2" fill="#1976d2"/>
+    <path d="M21 21l-6-6-4 4-7-7" stroke="#1976d2"/>
+  </svg>
+);
 
 function BookList() {
   type Kind = { id: number | null; name: string };
@@ -80,8 +101,22 @@ function BookList() {
 
   return (
     <div>
-      {/* 図鑑追加ボタン */}
-      <button onClick={() => setShowAddModal(true)}>図鑑追加</button>
+      {/* 図鑑追加ボタン（アイコン） */}
+      <button
+        onClick={() => setShowAddModal(true)}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          marginBottom: 16,
+          display: "flex",
+          alignItems: "center"
+        }}
+        aria-label="図鑑追加"
+        title="図鑑追加"
+      >
+        <PlusIcon />
+      </button>
 
       {/* 図鑑追加モーダル */}
       {showAddModal && (
@@ -164,25 +199,73 @@ function BookList() {
       )}
 
       {/* 図鑑リスト */}
-      {books.map((book) => (
-        <div key={book.id} style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-          <BookRow id={book.id} name={book.name} thumbnail={book.thumbnail} />
-          {/* サムネイル更新ボタン */}
-          <button style={{ marginLeft: 8 }} onClick={() => {
-            setThumbnailForm({ id: book.id, file: null });
-            setShowThumbnailModal(true);
-          }}>サムネイル更新</button>
-          {/* 編集ボタン */}
-          <button style={{ marginLeft: 4 }} onClick={() => {
-            setEditForm({
-              id: book.id,
-              name: book.name,
-              kinds: (book.kinds ?? [{ id: null, name: "" }]).map((k: Kind) => ({ id: k.id, name: k.name }))
-            });
-            setShowEditModal(true);
-          }}>編集</button>
-        </div>
-      ))}
+      <div>
+        {books.map((book) => (
+          <div
+            key={book.id}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "8px 0",
+              borderBottom: "1px solid #eee"
+            }}
+          >
+            <img
+              src={book.thumbnail || noThumbnailUrl}
+              alt="thumbnail"
+              style={{
+                width: 48,
+                height: 48,
+                objectFit: "cover",
+                borderRadius: 8,
+                marginRight: 16,
+                border: "1px solid #ccc",
+                background: "#fafafa"
+              }}
+            />
+            <div style={{ flex: 1, fontSize: 18, fontWeight: 500 }}>{book.name}</div>
+            {/* サムネイル更新ボタン（アイコン） */}
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                marginRight: 8,
+                padding: 4
+              }}
+              onClick={() => {
+                setThumbnailForm({ id: book.id, file: null });
+                setShowThumbnailModal(true);
+              }}
+              aria-label="サムネイル更新"
+              title="サムネイル更新"
+            >
+              <ImageIcon />
+            </button>
+            {/* 編集ボタン（アイコン） */}
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 4
+              }}
+              onClick={() => {
+                setEditForm({
+                  id: book.id,
+                  name: book.name,
+                  kinds: (book.kinds ?? [{ id: null, name: "" }]).map((k: Kind) => ({ id: k.id, name: k.name }))
+                });
+                setShowEditModal(true);
+              }}
+              aria-label="編集"
+              title="編集"
+            >
+              <EditIcon />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
