@@ -1,19 +1,71 @@
-import { Box, CardMedia, Container, Grid2, Modal, Paper, Typography } from "@mui/material";
+import {
+  Box,
+  CardMedia,
+  Container,
+  Grid2,
+  Paper,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Stack,
+  IconButton
+} from "@mui/material";
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import MenuIcon from '@mui/icons-material/Menu';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { noImageUrl, loadingImageUrl } from "./Const";
+
+// 型定義
+type Kind = {
+  id: number;
+  name: string;
+};
+
+type Image = {
+  id: number;
+  item_id: number;
+  file_name: string;
+};
+
+type Item = {
+  id: number;
+  book_id: number;
+  name: string;
+  kind_id: number | null;
+  explanation: string;
+  images: Image[];
+};
+
+type Book = {
+  id: number;
+  name: string;
+  thumbnail: string | null;
+  kinds: Kind[];
+  items: Item[];
+};
 
 function BookDetail() {
   const navigate = useNavigate();
   const { bookId } = useParams<{ bookId: string }>();
 
-  const initialBook = {
+  const initialBook: Book = {
     id: 1,
     name: 'データ取得中',
-    thumbnail: undefined,
+    thumbnail: null,
     kinds: [],
     items: [
       {
@@ -31,40 +83,66 @@ function BookDetail() {
     ]
   }
 
-  const [book, setBook] = useState(initialBook);
+  const [book, setBook] = useState<Book>(initialBook);
   const [itemIndex, setItemIndex] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [itemListOpen, setItemListOpen] = useState(false);
+
+  // 画像モーダル状態
+  const [imageAddOpen, setImageAddOpen] = useState(false);
+  const [imageUpdateOpen, setImageUpdateOpen] = useState(false);
+  const [imageDeleteOpen, setImageDeleteOpen] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  // アイテムモーダル状態
+  const [itemAddOpen, setItemAddOpen] = useState(false);
+  const [itemUpdateOpen, setItemUpdateOpen] = useState(false);
+  const [itemDeleteOpen, setItemDeleteOpen] = useState(false);
+
+  // アイテムフォーム値
+  const [itemForm, setItemForm] = useState<{
+    name: string;
+    kind_id: number | null;
+    explanation: string;
+  }>({
+    name: "",
+    kind_id: null,
+    explanation: ""
+  });
+
+  // 図鑑取得
+  const fetchAndSetBook = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/books/${bookId}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const data = await response.json();
+      if (!data || !data.items || data.items.length === 0) {
+        data.items = [{
+          id: 0,
+          book_id: 0,
+          name: 'アイテムがありません。',
+          kind_id: null,
+          explanation: 'この図鑑にはまだアイテムが登録されていません。',
+          images: [{ id: 0, item_id: 0, file_name: noImageUrl }]
+        }];
+      }
+      setBook(data);
+      setItemIndex(0);
+      setImageIndex(0);
+    } catch (error) {
+      console.error('Error fetching book:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBook = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`http://localhost:8000/api/books/${bookId}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        if (!data || !data.items || data.items.length === 0) {
-          console.warn('No items found in the book data');
-          data.items = [{
-            id: 1,
-            book_id: 1,
-            name: 'アイテムがありません。',
-            kind_id: null,
-            explanation: 'この図鑑にはまだアイテムが登録されていません。',
-            images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
-          }];
-        }
-        setBook(data);
-      } catch (error) {
-        console.error('Error fetching book:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchBook();
+    fetchAndSetBook();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId]);
 
   function handleClickBackUrl() {
@@ -105,13 +183,116 @@ function BookDetail() {
     setImageIndex(0);
   }
 
-  const handleModalOpen = () => setModalOpen(true);
-  const handleModalClose = () => setModalOpen(false);
+  const handleModalOpen = () => setItemListOpen(true);
+  const handleModalClose = () => setItemListOpen(false);
 
   const handleClickItem = (index: number) => {
     setItemIndex(index);
-    setModalOpen(false);
+    setItemListOpen(false);
   }
+
+  // アイテム追加
+  const handleItemAdd = async () => {
+    const params = {
+      book_id: book.id,
+      name: itemForm.name,
+      kind_id: book.kinds.length > 0 ? itemForm.kind_id : null,
+      explanation: itemForm.explanation,
+    };
+    await fetch("/api/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    setItemAddOpen(false);
+    setItemForm({ name: "", kind_id: null, explanation: "" });
+    await fetchAndSetBook();
+  };
+
+  // アイテム更新
+  const handleItemUpdate = async () => {
+    const itemId = book.items[itemIndex]?.id;
+    if (!itemId) return;
+    const params = {
+      book_id: book.id,
+      name: itemForm.name,
+      kind_id: book.kinds.length > 0 ? itemForm.kind_id : null,
+      explanation: itemForm.explanation,
+    };
+    await fetch(`/api/items/${itemId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    setItemUpdateOpen(false);
+    setItemForm({ name: "", kind_id: null, explanation: "" });
+    await fetchAndSetBook();
+  };
+
+  // アイテム削除
+  const handleItemDelete = async () => {
+    const itemId = book.items[itemIndex]?.id;
+    if (!itemId) return;
+    await fetch(`/api/items/${itemId}`, {
+      method: "DELETE",
+    });
+    setItemDeleteOpen(false);
+    await fetchAndSetBook();
+  };
+
+  // 画像追加
+  const handleImageAdd = async () => {
+    if (!imageFile) return;
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("item_id", String(book.items[itemIndex].id));
+    await fetch("/api/images", {
+      method: "POST",
+      body: formData,
+    });
+    setImageAddOpen(false);
+    setImageFile(null);
+    await fetchAndSetBook();
+  };
+
+  // 画像更新
+  const handleImageUpdate = async () => {
+    if (!imageFile) return;
+    const imageId = book.items[itemIndex].images[imageIndex]?.id;
+    if (!imageId) return;
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("item_id", String(book.items[itemIndex].id));
+    await fetch(`/api/updateImages/${imageId}`, {
+      method: "POST",
+      body: formData,
+    });
+    setImageUpdateOpen(false);
+    setImageFile(null);
+    await fetchAndSetBook();
+  };
+
+  // 画像削除
+  const handleImageDelete = async () => {
+    const imageId = book.items[itemIndex].images[imageIndex]?.id;
+    if (!imageId) return;
+    await fetch(`/api/images/${imageId}`, {
+      method: "DELETE",
+    });
+    setImageDeleteOpen(false);
+    await fetchAndSetBook();
+  };
+
+  // アイテム編集フォーム初期化
+  const openItemUpdateModal = () => {
+    const item = book.items[itemIndex];
+    setItemForm({
+      name: item.name || "",
+      kind_id: item.kind_id ?? null,
+      explanation: item.explanation || ""
+    });
+    setItemUpdateOpen(true);
+  };
 
   return (
     <Container maxWidth='sm'>
@@ -144,7 +325,7 @@ function BookDetail() {
           />
         </Grid2>
         <Grid2 size={9}>
-          <Box sx={{ width: '100%', aspectRatio: '1/1', alignContent: 'center' }}>
+          <Box sx={{ width: '100%', aspectRatio: '1/1', alignContent: 'center', position: 'relative' }}>
             {!isLoading && (
               <CardMedia
                 component={'img'}
@@ -164,6 +345,18 @@ function BookDetail() {
                 sx={{ objectFit: 'scale-down', objectPosition: 'center', maxWidth: '100%', maxHeight: '100%', margin: 'auto' }}
               />
             )}
+            {/* 画像操作ボタン */}
+            <Stack direction="row" spacing={1} sx={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
+              <IconButton color="primary" onClick={() => setImageAddOpen(true)} size="small" disabled={book.items[itemIndex].id === 0}>
+                <AddPhotoAlternateIcon />
+              </IconButton>
+              <IconButton color="primary" onClick={() => setImageUpdateOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
+                <EditIcon />
+              </IconButton>
+              <IconButton color="error" onClick={() => setImageDeleteOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
+                <DeleteIcon />
+              </IconButton>
+            </Stack>
           </Box>
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
@@ -201,45 +394,159 @@ function BookDetail() {
             <Typography variant='body2' align="center">
               {book.items[itemIndex].explanation || 'No Explanation'}
             </Typography>
+            {/* アイテム操作ボタン */}
+            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
+              <Button variant="outlined" size="small" startIcon={<AddCircleOutlineIcon />} onClick={() => setItemAddOpen(true)}>
+                追加
+              </Button>
+              <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={openItemUpdateModal} disabled={book.items[itemIndex].id === 0}>
+                更新
+              </Button>
+              <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} onClick={() => setItemDeleteOpen(true)} disabled={book.items[itemIndex].id === 0}>
+                削除
+              </Button>
+            </Stack>
           </Paper>
         </Grid2>
         <Grid2 size={`auto`}></Grid2>
       </Grid2>
-      <Modal
-        open={modalOpen}
+      {/* アイテム一覧モーダル */}
+      <Dialog
+        open={itemListOpen}
         onClose={handleModalClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
+        fullWidth
+        maxWidth="sm"
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '90%',
-            maxHeight: '90%',
-            bgcolor: 'background.paper',
-            border: '2px solid #000',
-            p: 2,
-            overflow: 'auto',
-          }}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            アイテム一覧
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+        <DialogTitle id="modal-modal-title">アイテム一覧</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={1} sx={{ mt: 1 }}>
             {book.items.map((item, index) => (
-              <Box key={index} sx={{ mt: 1, cursor: 'pointer' }} 
-                onClick={() => handleClickItem(index)} 
+              <Box
+                key={index}
+                sx={{ cursor: 'pointer', px: 1, py: 1, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                onClick={() => handleClickItem(index)}
               >
-                <Typography variant="body1">
-                  {item.name}
-                </Typography>
+                <Typography variant="body1">{item.name}</Typography>
               </Box>
             ))}
-          </Typography>
-        </Box>
-      </Modal>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleModalClose}>閉じる</Button>
+        </DialogActions>
+      </Dialog>
+      {/* 画像追加モーダル */}
+      <Dialog open={imageAddOpen} onClose={() => setImageAddOpen(false)}>
+        <DialogTitle>画像追加</DialogTitle>
+        <DialogContent>
+          <Button variant="contained" component="label">
+            画像を選択
+            <input type="file" hidden accept="image/*" onChange={e => setImageFile(e.target.files?.[0] ?? null)} />
+          </Button>
+          {imageFile && <Typography sx={{ mt: 1 }}>{imageFile.name}</Typography>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setImageAddOpen(false); setImageFile(null); }}>キャンセル</Button>
+          <Button onClick={handleImageAdd} variant="contained" disabled={!imageFile}>送信</Button>
+        </DialogActions>
+      </Dialog>
+      {/* 画像更新モーダル */}
+      <Dialog open={imageUpdateOpen} onClose={() => setImageUpdateOpen(false)}>
+        <DialogTitle>画像更新</DialogTitle>
+        <DialogContent>
+          <Button variant="contained" component="label">
+            画像を選択
+            <input type="file" hidden accept="image/*" onChange={e => setImageFile(e.target.files?.[0] ?? null)} />
+          </Button>
+          {imageFile && <Typography sx={{ mt: 1 }}>{imageFile.name}</Typography>}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setImageUpdateOpen(false); setImageFile(null); }}>キャンセル</Button>
+          <Button onClick={handleImageUpdate} variant="contained" disabled={!imageFile}>送信</Button>
+        </DialogActions>
+      </Dialog>
+      {/* 画像削除モーダル */}
+      <Dialog open={imageDeleteOpen} onClose={() => setImageDeleteOpen(false)}>
+        <DialogTitle>画像削除</DialogTitle>
+        <DialogContent>
+          <Typography>この画像を削除しますか？</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setImageDeleteOpen(false)}>キャンセル</Button>
+          <Button onClick={handleImageDelete} color="error" variant="contained">送信</Button>
+        </DialogActions>
+      </Dialog>
+      {/* アイテム追加モーダル */}
+      <Dialog open={itemAddOpen} onClose={() => setItemAddOpen(false)}>
+        <DialogTitle>アイテム追加</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField label="名前" value={itemForm.name} onChange={e => setItemForm(f => ({ ...f, name: e.target.value }))} fullWidth />
+            {book.kinds.length > 0 && (
+              <FormControl fullWidth>
+                <InputLabel id="kind-select-label">種類</InputLabel>
+                <Select
+                  labelId="kind-select-label"
+                  value={itemForm.kind_id ?? null}
+                  label="種類"
+                  onChange={e => setItemForm(f => ({ ...f, kind_id: Number(e.target.value) }))}
+                >
+                  {book.kinds.map((kind) => (
+                    <MenuItem key={kind.id} value={kind.id}>{kind.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            <TextField label="説明" value={itemForm.explanation} onChange={e => setItemForm(f => ({ ...f, explanation: e.target.value }))} fullWidth multiline minRows={2} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setItemAddOpen(false); setItemForm({ name: "", kind_id: null, explanation: "" }); }}>キャンセル</Button>
+          <Button onClick={handleItemAdd} variant="contained" disabled={!itemForm.name}>送信</Button>
+        </DialogActions>
+      </Dialog>
+      {/* アイテム更新モーダル */}
+      <Dialog open={itemUpdateOpen} onClose={() => setItemUpdateOpen(false)}>
+        <DialogTitle>アイテム更新</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField label="名前" value={itemForm.name} onChange={e => setItemForm(f => ({ ...f, name: e.target.value }))} fullWidth />
+            {book.kinds.length > 0 && (
+              <FormControl fullWidth>
+                <InputLabel id="kind-update-select-label">種類</InputLabel>
+                <Select
+                  labelId="kind-update-select-label"
+                  value={itemForm.kind_id ?? null}
+                  label="種類"
+                  onChange={e => setItemForm(f => ({ ...f, kind_id: Number(e.target.value) }))}
+                >
+                  {book.kinds.map((kind) => (
+                    <MenuItem key={kind.id} value={kind.id}>{kind.name}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+            <TextField label="説明" value={itemForm.explanation} onChange={e => setItemForm(f => ({ ...f, explanation: e.target.value }))} fullWidth multiline minRows={2} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setItemUpdateOpen(false); setItemForm({ name: "", kind_id: null, explanation: "" }); }}>キャンセル</Button>
+          <Button onClick={handleItemUpdate} variant="contained" disabled={!itemForm.name}>送信</Button>
+        </DialogActions>
+      </Dialog>
+      {/* アイテム削除モーダル */}
+      <Dialog open={itemDeleteOpen} onClose={() => setItemDeleteOpen(false)}>
+        <DialogTitle>アイテム削除</DialogTitle>
+        <DialogContent>
+          <Typography>このアイテムを削除しますか？</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setItemDeleteOpen(false)}>キャンセル</Button>
+          <Button onClick={handleItemDelete} color="error" variant="contained">送信</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
