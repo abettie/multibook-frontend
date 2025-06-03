@@ -54,7 +54,7 @@ type Item = {
 type Book = {
   id: number;
   name: string;
-  thumbnail?: string;
+  thumbnail: string | null;
   kinds: Kind[];
   items: Item[];
 };
@@ -66,7 +66,7 @@ function BookDetail() {
   const initialBook: Book = {
     id: 1,
     name: 'データ取得中',
-    thumbnail: undefined,
+    thumbnail: null,
     kinds: [],
     items: [
       {
@@ -88,7 +88,7 @@ function BookDetail() {
   const [itemIndex, setItemIndex] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [itemListOpen, setItemListOpen] = useState(false);
 
   // 画像モーダル状態
   const [imageAddOpen, setImageAddOpen] = useState(false);
@@ -112,34 +112,38 @@ function BookDetail() {
     explanation: ""
   });
 
-  useEffect(() => {
-    const fetchBook = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/books/${bookId}`);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const data = await response.json();
-        if (!data || !data.items || data.items.length === 0) {
-          console.warn('No items found in the book data');
-          data.items = [{
-            id: 1,
-            book_id: 1,
-            name: 'アイテムがありません。',
-            kind_id: null,
-            explanation: 'この図鑑にはまだアイテムが登録されていません。',
-            images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
-          }];
-        }
-        setBook(data);
-      } catch (error) {
-        console.error('Error fetching book:', error);
-      } finally {
-        setIsLoading(false);
+  // 図鑑取得
+  const fetchAndSetBook = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/books/${bookId}`);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
       }
+      const data = await response.json();
+      if (!data || !data.items || data.items.length === 0) {
+        data.items = [{
+          id: 1,
+          book_id: 1,
+          name: 'アイテムがありません。',
+          kind_id: null,
+          explanation: 'この図鑑にはまだアイテムが登録されていません。',
+          images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
+        }];
+      }
+      setBook(data);
+      setItemIndex(0);
+      setImageIndex(0);
+    } catch (error) {
+      console.error('Error fetching book:', error);
+    } finally {
+      setIsLoading(false);
     }
-    fetchBook();
+  };
+
+  useEffect(() => {
+    fetchAndSetBook();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId]);
 
   function handleClickBackUrl() {
@@ -180,56 +184,13 @@ function BookDetail() {
     setImageIndex(0);
   }
 
-  const handleModalOpen = () => setModalOpen(true);
-  const handleModalClose = () => setModalOpen(false);
+  const handleModalOpen = () => setItemListOpen(true);
+  const handleModalClose = () => setItemListOpen(false);
 
   const handleClickItem = (index: number) => {
     setItemIndex(index);
-    setModalOpen(false);
+    setItemListOpen(false);
   }
-
-  // 画像追加
-  const handleImageAdd = async () => {
-    if (!imageFile) return;
-    const formData = new FormData();
-    formData.append("image", imageFile);
-    formData.append("item_id", String(book.items[itemIndex].id));
-    await fetch("/api/images", {
-      method: "POST",
-      body: formData,
-    });
-    setImageAddOpen(false);
-    setImageFile(null);
-    await refetchBook();
-  };
-
-  // 画像更新
-  const handleImageUpdate = async () => {
-    if (!imageFile) return;
-    const imageId = book.items[itemIndex].images[imageIndex]?.id;
-    if (!imageId) return;
-    const formData = new FormData();
-    formData.append("image", imageFile);
-    formData.append("item_id", String(book.items[itemIndex].id));
-    await fetch(`/api/updateImages/${imageId}`, {
-      method: "POST",
-      body: formData,
-    });
-    setImageUpdateOpen(false);
-    setImageFile(null);
-    await refetchBook();
-  };
-
-  // 画像削除
-  const handleImageDelete = async () => {
-    const imageId = book.items[itemIndex].images[imageIndex]?.id;
-    if (!imageId) return;
-    await fetch(`/api/images/${imageId}`, {
-      method: "DELETE",
-    });
-    setImageDeleteOpen(false);
-    await refetchBook();
-  };
 
   // アイテム追加
   const handleItemAdd = async () => {
@@ -246,7 +207,7 @@ function BookDetail() {
     });
     setItemAddOpen(false);
     setItemForm({ name: "", kind_id: null, explanation: "" });
-    await refetchBook();
+    await fetchAndSetBook();
   };
 
   // アイテム更新
@@ -266,7 +227,7 @@ function BookDetail() {
     });
     setItemUpdateOpen(false);
     setItemForm({ name: "", kind_id: null, explanation: "" });
-    await refetchBook();
+    await fetchAndSetBook();
   };
 
   // アイテム削除
@@ -277,28 +238,50 @@ function BookDetail() {
       method: "DELETE",
     });
     setItemDeleteOpen(false);
-    await refetchBook();
+    await fetchAndSetBook();
   };
 
-  // 図鑑再取得
-  const refetchBook = async () => {
-    setIsLoading(true);
-    const response = await fetch(`/api/books/${bookId}`);
-    const data = await response.json();
-    if (!data || !data.items || data.items.length === 0) {
-      data.items = [{
-        id: 1,
-        book_id: 1,
-        name: 'アイテムがありません。',
-        kind_id: null,
-        explanation: 'この図鑑にはまだアイテムが登録されていません。',
-        images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
-      }];
-    }
-    setBook(data);
-    setItemIndex(0);
-    setImageIndex(0);
-    setIsLoading(false);
+  // 画像追加
+  const handleImageAdd = async () => {
+    if (!imageFile) return;
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("item_id", String(book.items[itemIndex].id));
+    await fetch("/api/images", {
+      method: "POST",
+      body: formData,
+    });
+    setImageAddOpen(false);
+    setImageFile(null);
+    await fetchAndSetBook();
+  };
+
+  // 画像更新
+  const handleImageUpdate = async () => {
+    if (!imageFile) return;
+    const imageId = book.items[itemIndex].images[imageIndex]?.id;
+    if (!imageId) return;
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    formData.append("item_id", String(book.items[itemIndex].id));
+    await fetch(`/api/updateImages/${imageId}`, {
+      method: "POST",
+      body: formData,
+    });
+    setImageUpdateOpen(false);
+    setImageFile(null);
+    await fetchAndSetBook();
+  };
+
+  // 画像削除
+  const handleImageDelete = async () => {
+    const imageId = book.items[itemIndex].images[imageIndex]?.id;
+    if (!imageId) return;
+    await fetch(`/api/images/${imageId}`, {
+      method: "DELETE",
+    });
+    setImageDeleteOpen(false);
+    await fetchAndSetBook();
   };
 
   // アイテム編集フォーム初期化
@@ -428,8 +411,9 @@ function BookDetail() {
         </Grid2>
         <Grid2 size={`auto`}></Grid2>
       </Grid2>
+      {/* アイテム一覧モーダル */}
       <Modal
-        open={modalOpen}
+        open={itemListOpen}
         onClose={handleModalClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
