@@ -3,7 +3,6 @@ import {
   CardMedia,
   Container,
   Grid2,
-  Modal,
   Paper,
   Typography,
   Button,
@@ -412,41 +411,32 @@ function BookDetail() {
         <Grid2 size={`auto`}></Grid2>
       </Grid2>
       {/* アイテム一覧モーダル */}
-      <Modal
+      <Dialog
         open={itemListOpen}
         onClose={handleModalClose}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
+        fullWidth
+        maxWidth="sm"
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: '90%',
-            maxHeight: '90%',
-            bgcolor: 'background.paper',
-            border: '2px solid #000',
-            p: 2,
-            overflow: 'auto',
-          }}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            アイテム一覧
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+        <DialogTitle id="modal-modal-title">アイテム一覧</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={1} sx={{ mt: 1 }}>
             {book.items.map((item, index) => (
-              <Box key={index} sx={{ mt: 1, cursor: 'pointer' }} 
-                onClick={() => handleClickItem(index)} 
+              <Box
+                key={index}
+                sx={{ cursor: 'pointer', px: 1, py: 1, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                onClick={() => handleClickItem(index)}
               >
-                <Typography variant="body1">
-                  {item.name}
-                </Typography>
+                <Typography variant="body1">{item.name}</Typography>
               </Box>
             ))}
-          </Typography>
-        </Box>
-      </Modal>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleModalClose}>閉じる</Button>
+        </DialogActions>
+      </Dialog>
       {/* 画像追加モーダル */}
       <Dialog open={imageAddOpen} onClose={() => setImageAddOpen(false)}>
         <DialogTitle>画像追加</DialogTitle>
