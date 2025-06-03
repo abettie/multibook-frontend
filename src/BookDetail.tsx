@@ -141,17 +141,13 @@ function BookDetail() {
     const formData = new FormData();
     formData.append("image", imageFile);
     formData.append("item_id", String(book.items[itemIndex].id));
-    try {
-      await fetch("/api/images", {
-        method: "POST",
-        body: formData,
-      });
-      setImageAddOpen(false);
-      setImageFile(null);
-      await refetchBook();
-    } catch (e) {
-      // error handling
-    }
+    await fetch("/api/images", {
+      method: "POST",
+      body: formData,
+    });
+    setImageAddOpen(false);
+    setImageFile(null);
+    await refetchBook();
   };
 
   // 画像更新
@@ -162,32 +158,24 @@ function BookDetail() {
     const formData = new FormData();
     formData.append("image", imageFile);
     formData.append("item_id", String(book.items[itemIndex].id));
-    try {
-      await fetch(`/api/updateImages/${imageId}`, {
-        method: "POST",
-        body: formData,
-      });
-      setImageUpdateOpen(false);
-      setImageFile(null);
-      await refetchBook();
-    } catch (e) {
-      // error handling
-    }
+    await fetch(`/api/updateImages/${imageId}`, {
+      method: "POST",
+      body: formData,
+    });
+    setImageUpdateOpen(false);
+    setImageFile(null);
+    await refetchBook();
   };
 
   // 画像削除
   const handleImageDelete = async () => {
     const imageId = book.items[itemIndex].images[imageIndex]?.id;
     if (!imageId) return;
-    try {
-      await fetch(`/api/images/${imageId}`, {
-        method: "DELETE",
-      });
-      setImageDeleteOpen(false);
-      await refetchBook();
-    } catch (e) {
-      // error handling
-    }
+    await fetch(`/api/images/${imageId}`, {
+      method: "DELETE",
+    });
+    setImageDeleteOpen(false);
+    await refetchBook();
   };
 
   // アイテム追加
@@ -198,18 +186,14 @@ function BookDetail() {
       kind_id: book.kinds.length > 0 ? itemForm.kind_id : null,
       explanation: itemForm.explanation,
     };
-    try {
-      await fetch("/api/items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
-      setItemAddOpen(false);
-      setItemForm({ name: "", kind_id: "", explanation: "" });
-      await refetchBook();
-    } catch (e) {
-      // error handling
-    }
+    await fetch("/api/items", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    setItemAddOpen(false);
+    setItemForm({ name: "", kind_id: "", explanation: "" });
+    await refetchBook();
   };
 
   // アイテム更新
@@ -222,59 +206,46 @@ function BookDetail() {
       kind_id: book.kinds.length > 0 ? itemForm.kind_id : null,
       explanation: itemForm.explanation,
     };
-    try {
-      await fetch(`/api/items/${itemId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
-      setItemUpdateOpen(false);
-      setItemForm({ name: "", kind_id: "", explanation: "" });
-      await refetchBook();
-    } catch (e) {
-      // error handling
-    }
+    await fetch(`/api/items/${itemId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    setItemUpdateOpen(false);
+    setItemForm({ name: "", kind_id: "", explanation: "" });
+    await refetchBook();
   };
 
   // アイテム削除
   const handleItemDelete = async () => {
     const itemId = book.items[itemIndex]?.id;
     if (!itemId) return;
-    try {
-      await fetch(`/api/items/${itemId}`, {
-        method: "DELETE",
-      });
-      setItemDeleteOpen(false);
-      await refetchBook();
-    } catch (e) {
-      // error handling
-    }
+    await fetch(`/api/items/${itemId}`, {
+      method: "DELETE",
+    });
+    setItemDeleteOpen(false);
+    await refetchBook();
   };
 
   // 図鑑再取得
   const refetchBook = async () => {
     setIsLoading(true);
-    try {
-      const response = await fetch(`/api/books/${bookId}`);
-      const data = await response.json();
-      if (!data || !data.items || data.items.length === 0) {
-        data.items = [{
-          id: 1,
-          book_id: 1,
-          name: 'アイテムがありません。',
-          kind_id: null,
-          explanation: 'この図鑑にはまだアイテムが登録されていません。',
-          images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
-        }];
-      }
-      setBook(data);
-      setItemIndex(0);
-      setImageIndex(0);
-    } catch (e) {
-      // error handling
-    } finally {
-      setIsLoading(false);
+    const response = await fetch(`/api/books/${bookId}`);
+    const data = await response.json();
+    if (!data || !data.items || data.items.length === 0) {
+      data.items = [{
+        id: 1,
+        book_id: 1,
+        name: 'アイテムがありません。',
+        kind_id: null,
+        explanation: 'この図鑑にはまだアイテムが登録されていません。',
+        images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
+      }];
     }
+    setBook(data);
+    setItemIndex(0);
+    setImageIndex(0);
+    setIsLoading(false);
   };
 
   // アイテム編集フォーム初期化
