@@ -28,6 +28,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { noImageUrl, loadingImageUrl } from "./Const";
+import { BookSharp } from "@mui/icons-material";
 
 // 型定義
 type Kind = {
@@ -122,12 +123,12 @@ function BookDetail() {
       const data = await response.json();
       if (!data || !data.items || data.items.length === 0) {
         data.items = [{
-          id: 1,
-          book_id: 1,
+          id: 0,
+          book_id: 0,
           name: 'アイテムがありません。',
           kind_id: null,
           explanation: 'この図鑑にはまだアイテムが登録されていません。',
-          images: [{ id: 1, item_id: 1, file_name: noImageUrl }]
+          images: [{ id: 0, item_id: 0, file_name: noImageUrl }]
         }];
       }
       setBook(data);
@@ -347,13 +348,13 @@ function BookDetail() {
             )}
             {/* 画像操作ボタン */}
             <Stack direction="row" spacing={1} sx={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
-              <IconButton color="primary" onClick={() => setImageAddOpen(true)} size="small">
+              <IconButton color="primary" onClick={() => setImageAddOpen(true)} size="small" disabled={book.items[itemIndex].id === 0}>
                 <AddPhotoAlternateIcon />
               </IconButton>
-              <IconButton color="primary" onClick={() => setImageUpdateOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0}>
+              <IconButton color="primary" onClick={() => setImageUpdateOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
                 <EditIcon />
               </IconButton>
-              <IconButton color="error" onClick={() => setImageDeleteOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0}>
+              <IconButton color="error" onClick={() => setImageDeleteOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
                 <DeleteIcon />
               </IconButton>
             </Stack>
@@ -399,10 +400,10 @@ function BookDetail() {
               <Button variant="outlined" size="small" startIcon={<AddCircleOutlineIcon />} onClick={() => setItemAddOpen(true)}>
                 追加
               </Button>
-              <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={openItemUpdateModal} disabled={book.items.length === 0}>
+              <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={openItemUpdateModal} disabled={book.items[itemIndex].id === 0}>
                 更新
               </Button>
-              <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} onClick={() => setItemDeleteOpen(true)} disabled={book.items.length === 0}>
+              <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} onClick={() => setItemDeleteOpen(true)} disabled={book.items[itemIndex].id === 0}>
                 削除
               </Button>
             </Stack>
