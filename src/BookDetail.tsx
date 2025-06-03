@@ -1,4 +1,24 @@
-import { Box, CardMedia, Container, Grid2, Modal, Paper, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Select, MenuItem, InputLabel, FormControl, Stack, IconButton } from "@mui/material";
+import {
+  Box,
+  CardMedia,
+  Container,
+  Grid2,
+  Modal,
+  Paper,
+  Typography,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Stack,
+  IconButton
+} from "@mui/material";
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -10,11 +30,40 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { noImageUrl, loadingImageUrl } from "./Const";
 
+// 型定義
+type Kind = {
+  id: number;
+  name: string;
+};
+
+type Image = {
+  id: number;
+  item_id: number;
+  file_name: string;
+};
+
+type Item = {
+  id: number;
+  book_id: number;
+  name: string;
+  kind_id: number | null;
+  explanation: string;
+  images: Image[];
+};
+
+type Book = {
+  id: number;
+  name: string;
+  thumbnail?: string;
+  kinds: Kind[];
+  items: Item[];
+};
+
 function BookDetail() {
   const navigate = useNavigate();
   const { bookId } = useParams<{ bookId: string }>();
 
-  const initialBook = {
+  const initialBook: Book = {
     id: 1,
     name: 'データ取得中',
     thumbnail: undefined,
@@ -35,7 +84,7 @@ function BookDetail() {
     ]
   }
 
-  const [book, setBook] = useState(initialBook);
+  const [book, setBook] = useState<Book>(initialBook);
   const [itemIndex, setItemIndex] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,9 +102,13 @@ function BookDetail() {
   const [itemDeleteOpen, setItemDeleteOpen] = useState(false);
 
   // アイテムフォーム値
-  const [itemForm, setItemForm] = useState({
+  const [itemForm, setItemForm] = useState<{
+    name: string;
+    kind_id: number | null;
+    explanation: string;
+  }>({
     name: "",
-    kind_id: "",
+    kind_id: null,
     explanation: ""
   });
 
@@ -180,7 +233,7 @@ function BookDetail() {
 
   // アイテム追加
   const handleItemAdd = async () => {
-    const params: any = {
+    const params = {
       book_id: book.id,
       name: itemForm.name,
       kind_id: book.kinds.length > 0 ? itemForm.kind_id : null,
@@ -192,7 +245,7 @@ function BookDetail() {
       body: JSON.stringify(params),
     });
     setItemAddOpen(false);
-    setItemForm({ name: "", kind_id: "", explanation: "" });
+    setItemForm({ name: "", kind_id: null, explanation: "" });
     await refetchBook();
   };
 
@@ -200,7 +253,7 @@ function BookDetail() {
   const handleItemUpdate = async () => {
     const itemId = book.items[itemIndex]?.id;
     if (!itemId) return;
-    const params: any = {
+    const params = {
       book_id: book.id,
       name: itemForm.name,
       kind_id: book.kinds.length > 0 ? itemForm.kind_id : null,
@@ -212,7 +265,7 @@ function BookDetail() {
       body: JSON.stringify(params),
     });
     setItemUpdateOpen(false);
-    setItemForm({ name: "", kind_id: "", explanation: "" });
+    setItemForm({ name: "", kind_id: null, explanation: "" });
     await refetchBook();
   };
 
@@ -253,7 +306,7 @@ function BookDetail() {
     const item = book.items[itemIndex];
     setItemForm({
       name: item.name || "",
-      kind_id: item.kind_id ?? "",
+      kind_id: item.kind_id ?? null,
       explanation: item.explanation || ""
     });
     setItemUpdateOpen(true);
@@ -462,11 +515,11 @@ function BookDetail() {
                 <InputLabel id="kind-select-label">種類</InputLabel>
                 <Select
                   labelId="kind-select-label"
-                  value={itemForm.kind_id}
+                  value={itemForm.kind_id ?? null}
                   label="種類"
-                  onChange={e => setItemForm(f => ({ ...f, kind_id: e.target.value }))}
+                  onChange={e => setItemForm(f => ({ ...f, kind_id: Number(e.target.value) }))}
                 >
-                  {book.kinds.map((kind: any) => (
+                  {book.kinds.map((kind) => (
                     <MenuItem key={kind.id} value={kind.id}>{kind.name}</MenuItem>
                   ))}
                 </Select>
@@ -476,7 +529,7 @@ function BookDetail() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setItemAddOpen(false); setItemForm({ name: "", kind_id: "", explanation: "" }); }}>キャンセル</Button>
+          <Button onClick={() => { setItemAddOpen(false); setItemForm({ name: "", kind_id: null, explanation: "" }); }}>キャンセル</Button>
           <Button onClick={handleItemAdd} variant="contained" disabled={!itemForm.name}>送信</Button>
         </DialogActions>
       </Dialog>
@@ -491,11 +544,11 @@ function BookDetail() {
                 <InputLabel id="kind-update-select-label">種類</InputLabel>
                 <Select
                   labelId="kind-update-select-label"
-                  value={itemForm.kind_id}
+                  value={itemForm.kind_id ?? null}
                   label="種類"
-                  onChange={e => setItemForm(f => ({ ...f, kind_id: e.target.value }))}
+                  onChange={e => setItemForm(f => ({ ...f, kind_id: Number(e.target.value) }))}
                 >
-                  {book.kinds.map((kind: any) => (
+                  {book.kinds.map((kind) => (
                     <MenuItem key={kind.id} value={kind.id}>{kind.name}</MenuItem>
                   ))}
                 </Select>
@@ -505,7 +558,7 @@ function BookDetail() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setItemUpdateOpen(false); setItemForm({ name: "", kind_id: "", explanation: "" }); }}>キャンセル</Button>
+          <Button onClick={() => { setItemUpdateOpen(false); setItemForm({ name: "", kind_id: null, explanation: "" }); }}>キャンセル</Button>
           <Button onClick={handleItemUpdate} variant="contained" disabled={!itemForm.name}>送信</Button>
         </DialogActions>
       </Dialog>
