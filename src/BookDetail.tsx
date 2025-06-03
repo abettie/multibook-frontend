@@ -28,7 +28,6 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { noImageUrl, loadingImageUrl } from "./Const";
-import { BookSharp } from "@mui/icons-material";
 
 // 型定義
 type Kind = {
