@@ -112,7 +112,7 @@ function BookDetail() {
   });
 
   // 図鑑取得
-  const fetchAndSetBook = async () => {
+  const fetchAndSetBook = async (keepItemIndex = false, keepImageIndex = false) => {
     setIsLoading(true);
     try {
       const response = await fetch(`/api/books/${bookId}`);
@@ -131,8 +131,12 @@ function BookDetail() {
         }];
       }
       setBook(data);
-      setItemIndex(0);
-      setImageIndex(0);
+      if( !keepItemIndex) {
+        setItemIndex(0);
+      }
+      if( !keepImageIndex) {
+        setImageIndex(0);
+      }
     } catch (error) {
       console.error('Error fetching book:', error);
     } finally {
@@ -206,7 +210,7 @@ function BookDetail() {
     });
     setItemAddOpen(false);
     setItemForm({ name: "", kind_id: null, explanation: "" });
-    await fetchAndSetBook();
+    await fetchAndSetBook(true, true);
   };
 
   // アイテム更新
@@ -226,7 +230,7 @@ function BookDetail() {
     });
     setItemUpdateOpen(false);
     setItemForm({ name: "", kind_id: null, explanation: "" });
-    await fetchAndSetBook();
+    await fetchAndSetBook(true, true);
   };
 
   // アイテム削除
@@ -252,7 +256,7 @@ function BookDetail() {
     });
     setImageAddOpen(false);
     setImageFile(null);
-    await fetchAndSetBook();
+    await fetchAndSetBook(true, true);
   };
 
   // 画像更新
@@ -269,7 +273,7 @@ function BookDetail() {
     });
     setImageUpdateOpen(false);
     setImageFile(null);
-    await fetchAndSetBook();
+    await fetchAndSetBook(true, true);
   };
 
   // 画像削除
@@ -280,7 +284,7 @@ function BookDetail() {
       method: "DELETE",
     });
     setImageDeleteOpen(false);
-    await fetchAndSetBook();
+    await fetchAndSetBook(true, false);
   };
 
   // アイテム編集フォーム初期化
