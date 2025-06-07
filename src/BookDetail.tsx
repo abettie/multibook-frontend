@@ -379,8 +379,14 @@ function BookDetail() {
         </Grid2>
         <Grid2 size={9} alignContent={`center`}>
           <Paper>
-            <Typography variant='body1' align="center">
-              {book.items[itemIndex].name || 'No Name'}
+            <Typography variant='body1' align="center" sx={{ minHeight: 48, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {/* kind名を表示（存在する場合のみ） */}
+              {book.items[itemIndex].kind_id !== null && (
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
+                  {book.kinds.find(k => k.id === book.items[itemIndex].kind_id)?.name}
+                </Typography>
+              )}
+              <span>{book.items[itemIndex].name || 'No Name'}</span>
             </Typography>
           </Paper>
         </Grid2>
