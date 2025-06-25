@@ -36,7 +36,7 @@ function BookList() {
 
   const fetchBooks = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/books");
+      const response = await fetch("/api/books");
       if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
       setBooks(data);
@@ -51,7 +51,7 @@ function BookList() {
 
   // 図鑑追加送信
   const handleAddSubmit = async () => {
-    await fetch("http://localhost:8000/api/books", {
+    await fetch("/api/books", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -67,7 +67,7 @@ function BookList() {
   // 図鑑編集送信
   const handleEditSubmit = async () => {
     if (!editForm.id) return;
-    await fetch(`http://localhost:8000/api/books/${editForm.id}`, {
+    await fetch(`/api/books/${editForm.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -85,7 +85,7 @@ function BookList() {
     if (!thumbnailForm.id || !thumbnailForm.file) return;
     const formData = new FormData();
     formData.append("thumbnail", thumbnailForm.file);
-    await fetch(`http://localhost:8000/api/books/${thumbnailForm.id}/thumbnail`, {
+    await fetch(`/api/books/${thumbnailForm.id}/thumbnail`, {
       method: "POST",
       body: formData,
     });
