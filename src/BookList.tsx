@@ -17,6 +17,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import EditIcon from "@mui/icons-material/Edit";
 import ImageIcon from "@mui/icons-material/Image";
 import { useNavigate } from "react-router";
+import ClipboardImageButton from "./ClipboardImageButton";
 
 function BookList() {
   type Kind = { id: number | null; name: string };
@@ -212,6 +213,10 @@ function BookList() {
             accept="image/*"
             onChange={e => setThumbnailForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))}
             style={{ marginTop: 8 }}
+          />
+          <ClipboardImageButton
+            onImage={file => setThumbnailForm(f => ({ ...f, file }))}
+            sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions>

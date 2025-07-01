@@ -28,6 +28,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { noImageUrl, loadingImageUrl } from "./Const";
+import ClipboardImageButton from "./ClipboardImageButton";
 
 // 型定義
 type Kind = {
@@ -455,6 +456,10 @@ function BookDetail() {
             画像を選択
             <input type="file" hidden accept="image/*" onChange={e => setImageFile(e.target.files?.[0] ?? null)} />
           </Button>
+          <ClipboardImageButton
+            onImage={file => setImageFile(file)}
+            sx={{ mt: 1, ml: 1 }}
+          />
           {imageFile && <Typography sx={{ mt: 1 }}>{imageFile.name}</Typography>}
         </DialogContent>
         <DialogActions>
@@ -470,6 +475,10 @@ function BookDetail() {
             画像を選択
             <input type="file" hidden accept="image/*" onChange={e => setImageFile(e.target.files?.[0] ?? null)} />
           </Button>
+          <ClipboardImageButton
+            onImage={file => setImageFile(file)}
+            sx={{ mt: 1, ml: 1 }}
+          />
           {imageFile && <Typography sx={{ mt: 1 }}>{imageFile.name}</Typography>}
         </DialogContent>
         <DialogActions>
