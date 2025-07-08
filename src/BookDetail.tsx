@@ -336,7 +336,7 @@ function BookDetail() {
           />
         </Grid2>
         <Grid2 size={9}>
-          <Paper sx={{ pt: 1, pb: 1 }}>
+          <Paper sx={{ mb: 1, pt: 1, pb: 1 }}>
             <Typography variant='body1' align="center">
               {book.name}
             </Typography>
