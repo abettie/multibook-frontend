@@ -343,12 +343,10 @@ function BookDetail() {
           </Paper>
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
-          {!isQuizMode && (
-            <MenuIcon 
-              onClick={handleModalOpen}
-              sx={{ cursor: 'pointer' }}
-            />
-          )}
+          <MenuIcon 
+            onClick={isQuizMode ? undefined : handleModalOpen}
+            sx={{ cursor: isQuizMode ? 'default' : 'pointer', color: isQuizMode ? 'grey.400' : undefined }}
+          />
         </Grid2>
       </Grid2>
       <Grid2 container spacing={1} justifyContent={`space-between`}>
