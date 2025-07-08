@@ -16,6 +16,7 @@ import {
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import EditIcon from "@mui/icons-material/Edit";
 import ImageIcon from "@mui/icons-material/Image";
+import QuizIcon from "@mui/icons-material/Quiz";
 import { useNavigate } from "react-router";
 import ClipboardImageButton from "./ClipboardImageButton";
 
@@ -265,6 +266,15 @@ function BookList() {
             >
               {book.name}
             </Box>
+            <Tooltip title="クイズモード">
+              <IconButton
+                color="primary"
+                onClick={() => navigate(`/books/${book.id}?q=1`)}
+                sx={{ mr: 1 }}
+              >
+                <QuizIcon />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="サムネイル更新">
               <IconButton
                 color="primary"
