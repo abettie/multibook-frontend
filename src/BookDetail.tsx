@@ -26,7 +26,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { noImageUrl, loadingImageUrl } from "./Const";
 import ClipboardImageButton from "./ClipboardImageButton";
 
@@ -62,6 +62,10 @@ type Book = {
 function BookDetail() {
   const navigate = useNavigate();
   const { bookId } = useParams<{ bookId: string }>();
+  const location = useLocation();
+
+  // クイズモード判定
+  const isQuizMode = new URLSearchParams(location.search).get("q") === "1";
 
   const initialBook: Book = {
     id: 1,
@@ -111,6 +115,10 @@ function BookDetail() {
     kind_id: null,
     explanation: ""
   });
+
+  // ヒント表示状態
+  const [showHint, setShowHint] = useState(false);
+  const [showName, setShowName] = useState(false);
 
   // 図鑑取得
   const fetchAndSetBook = async (keepItemIndex = false, keepImageIndex = false) => {
@@ -170,6 +178,7 @@ function BookDetail() {
     setImageIndex(nextIndex);
   }
 
+  // アイテム遷移時にヒント・name表示リセット
   function handleClickPrevItem() {
     let prevIndex = itemIndex - 1;
     if (prevIndex < 0) {
@@ -177,6 +186,8 @@ function BookDetail() {
     }
     setItemIndex(prevIndex);
     setImageIndex(0);
+    setShowHint(false);
+    setShowName(false);
   }
 
   function handleClickNextItem() {
@@ -186,6 +197,8 @@ function BookDetail() {
     }
     setItemIndex(nextIndex);
     setImageIndex(0);
+    setShowHint(false);
+    setShowName(false);
   }
 
   const handleModalOpen = () => setItemListOpen(true);
@@ -194,6 +207,20 @@ function BookDetail() {
   const handleClickItem = (index: number) => {
     setItemIndex(index);
     setItemListOpen(false);
+    setShowHint(false);
+    setShowName(false);
+  }
+
+  // ヒント取得
+  function getHint(name: string) {
+    if (!name) return "";
+    const parenIdx = name.indexOf("（");
+    if (parenIdx > 0) {
+      // （の直前の1文字
+      return name[parenIdx - 1];
+    }
+    // 最後の1文字
+    return name[name.length - 1];
   }
 
   // アイテム追加
@@ -309,17 +336,19 @@ function BookDetail() {
           />
         </Grid2>
         <Grid2 size={9}>
-          <Paper>
+          <Paper sx={{ pt: 1, pb: 1 }}>
             <Typography variant='body1' align="center">
               {book.name}
             </Typography>
           </Paper>
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
-          <MenuIcon 
-            onClick={handleModalOpen}
-            sx={{ cursor: 'pointer' }}
-          />
+          {!isQuizMode && (
+            <MenuIcon 
+              onClick={handleModalOpen}
+              sx={{ cursor: 'pointer' }}
+            />
+          )}
         </Grid2>
       </Grid2>
       <Grid2 container spacing={1} justifyContent={`space-between`}>
@@ -351,17 +380,19 @@ function BookDetail() {
               />
             )}
             {/* 画像操作ボタン */}
-            <Stack direction="row" spacing={1} sx={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
-              <IconButton color="primary" onClick={() => setImageAddOpen(true)} size="small" disabled={book.items[itemIndex].id === 0}>
-                <AddPhotoAlternateIcon />
-              </IconButton>
-              <IconButton color="primary" onClick={() => setImageUpdateOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
-                <EditIcon />
-              </IconButton>
-              <IconButton color="error" onClick={() => setImageDeleteOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
-                <DeleteIcon />
-              </IconButton>
-            </Stack>
+            {!isQuizMode && (
+              <Stack direction="row" spacing={1} sx={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
+                <IconButton color="primary" onClick={() => setImageAddOpen(true)} size="small" disabled={book.items[itemIndex].id === 0}>
+                  <AddPhotoAlternateIcon />
+                </IconButton>
+                <IconButton color="primary" onClick={() => setImageUpdateOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton color="error" onClick={() => setImageDeleteOpen(true)} size="small" disabled={book.items[itemIndex].images.length === 0 || book.items[itemIndex].id === 0}>
+                  <DeleteIcon />
+                </IconButton>
+              </Stack>
+            )}
           </Box>
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
@@ -379,7 +410,7 @@ function BookDetail() {
           />
         </Grid2>
         <Grid2 size={9} alignContent={`center`}>
-          <Paper>
+          <Paper sx={{ pt: 1, pb: 1 }}>
             <Typography variant='body1' align="center" sx={{ minHeight: 48, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               {/* kind名を表示（存在する場合のみ） */}
               {book.items[itemIndex].kind_id !== null && (
@@ -387,8 +418,36 @@ function BookDetail() {
                   {book.kinds.find(k => k.id === book.items[itemIndex].kind_id)?.name}
                 </Typography>
               )}
-              <span>{book.items[itemIndex].name || 'No Name'}</span>
+              {/* クイズモード時はname非表示、クリックで表示 */}
+              {isQuizMode ? (
+                <span
+                  style={{ cursor: 'pointer', userSelect: 'none' }}
+                  onClick={() => setShowName(true)}
+                >
+                  {showName ? (book.items[itemIndex].name || 'No Name') : '???'}
+                </span>
+              ) : (
+                <span>{book.items[itemIndex].name || 'No Name'}</span>
+              )}
             </Typography>
+            {/* クイズモード時のみヒントボタン */}
+            {isQuizMode && (
+              <Stack direction="column" spacing={1} justifyContent="center" alignItems="center" sx={{ mt: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowHint(true)}
+                  disabled={showHint}
+                >
+                  ヒント
+                </Button>
+                {showHint && (
+                  <Typography variant="body2" color="primary">
+                    最後の文字: {getHint(book.items[itemIndex].name)}
+                  </Typography>
+                )}
+              </Stack>
+            )}
           </Paper>
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
@@ -401,22 +460,24 @@ function BookDetail() {
       <Grid2 container spacing={1} justifyContent={`space-between`}>
         <Grid2 size={`auto`}></Grid2>
         <Grid2 size={9}>
-          <Paper sx={{ mt: 2 }}>
+          <Paper sx={{ mt: 1, pt: 1, pb: 1 }}>
             <Typography variant='body2' align="center">
               {book.items[itemIndex].explanation || 'No Explanation'}
             </Typography>
-            {/* アイテム操作ボタン */}
-            <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
-              <Button variant="outlined" size="small" startIcon={<AddCircleOutlineIcon />} onClick={() => setItemAddOpen(true)}>
-                追加
-              </Button>
-              <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={openItemUpdateModal} disabled={book.items[itemIndex].id === 0}>
-                更新
-              </Button>
-              <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} onClick={() => setItemDeleteOpen(true)} disabled={book.items[itemIndex].id === 0}>
-                削除
-              </Button>
-            </Stack>
+            {/* アイテム操作ボタン（クイズモード時は非表示） */}
+            {!isQuizMode && (
+              <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 1 }}>
+                <Button variant="outlined" size="small" startIcon={<AddCircleOutlineIcon />} onClick={() => setItemAddOpen(true)}>
+                  追加
+                </Button>
+                <Button variant="outlined" size="small" startIcon={<EditIcon />} onClick={openItemUpdateModal} disabled={book.items[itemIndex].id === 0}>
+                  更新
+                </Button>
+                <Button variant="outlined" size="small" color="error" startIcon={<DeleteIcon />} onClick={() => setItemDeleteOpen(true)} disabled={book.items[itemIndex].id === 0}>
+                  削除
+                </Button>
+              </Stack>
+            )}
           </Paper>
         </Grid2>
         <Grid2 size={`auto`}></Grid2>
