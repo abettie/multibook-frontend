@@ -88,6 +88,7 @@ function BookDetail() {
     ]
   }
 
+  // ページング関連
   const [book, setBook] = useState<Book>(initialBook);
   const [itemIndex, setItemIndex] = useState(0);
   const [imageIndex, setImageIndex] = useState(0);
@@ -116,9 +117,11 @@ function BookDetail() {
     explanation: ""
   });
 
-  // ヒント表示状態
-  const [showHint, setShowHint] = useState(false);
+  // 名前表示状態
   const [showName, setShowName] = useState(false);
+
+  // ヒント表示状態
+  const [hintRevealedIndexes, setHintRevealedIndexes] = useState<number[]>([]);
 
   // 図鑑取得
   const fetchAndSetBook = async (keepItemIndex = false, keepImageIndex = false) => {
@@ -186,7 +189,7 @@ function BookDetail() {
     }
     setItemIndex(prevIndex);
     setImageIndex(0);
-    setShowHint(false);
+    setHintRevealedIndexes([]);
     setShowName(false);
   }
 
@@ -197,7 +200,7 @@ function BookDetail() {
     }
     setItemIndex(nextIndex);
     setImageIndex(0);
-    setShowHint(false);
+    setHintRevealedIndexes([]);
     setShowName(false);
   }
 
@@ -207,21 +210,41 @@ function BookDetail() {
   const handleClickItem = (index: number) => {
     setItemIndex(index);
     setItemListOpen(false);
-    setShowHint(false);
     setShowName(false);
   }
 
-  // ヒント取得
-  function getHint(name: string) {
+  // ヒント生成
+  function getHintMasked(name: string, revealedIndexes: number[]) {
     if (!name) return "";
-    const parenIdx = name.indexOf("（");
-    if (parenIdx > 0) {
-      // （の直前の1文字
-      return name[parenIdx - 1];
-    }
-    // 最後の1文字
-    return name[name.length - 1];
+    // 文字ごとに置換
+    const chars = Array.from(name);
+    return chars.map((ch, idx) => {
+      if (revealedIndexes.includes(idx)) return ch;
+      if (ch === " " || ch === "　") return ch;
+      // マルチバイト文字判定
+      return ch.charCodeAt(0) > 255 ? "〇" : "*";
+    }).join("");
   }
+
+  // ヒントボタン押下時
+  function handleHintButton() {
+    const name = book.items[itemIndex].name || "";
+    const chars = Array.from(name);
+    // 開示済みインデックス
+    const unrevealed = chars
+      .map((_, idx) => idx)
+      .filter(idx => !hintRevealedIndexes.includes(idx) && chars[idx] !== " " && chars[idx] !== "　");
+    if (unrevealed.length === 0) return; // すべて開示済み
+    // ランダムで1文字開示
+    const randIdx = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+    setHintRevealedIndexes([...hintRevealedIndexes, randIdx]);
+  }
+
+  // アイテム切り替え時にヒント状態リセット
+  useEffect(() => {
+    setHintRevealedIndexes([]);
+    setShowName(false);
+  }, [itemIndex]);
 
   // アイテム追加
   const handleItemAdd = async () => {
@@ -343,6 +366,7 @@ function BookDetail() {
           </Paper>
         </Grid2>
         <Grid2 size={`auto`} alignContent={`center`}>
+          {/* クイズモード時はメニュー無効 */}
           <MenuIcon 
             onClick={isQuizMode ? undefined : handleModalOpen}
             sx={{ cursor: isQuizMode ? 'default' : 'pointer', color: isQuizMode ? 'grey.400' : undefined }}
@@ -377,7 +401,7 @@ function BookDetail() {
                 sx={{ objectFit: 'scale-down', objectPosition: 'center', maxWidth: '100%', maxHeight: '100%', margin: 'auto' }}
               />
             )}
-            {/* 画像操作ボタン */}
+            {/* 画像操作ボタン（クイズモード時は非表示） */}
             {!isQuizMode && (
               <Stack direction="row" spacing={1} sx={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 2 }}>
                 <IconButton color="primary" onClick={() => setImageAddOpen(true)} size="small" disabled={book.items[itemIndex].id === 0}>
@@ -422,7 +446,14 @@ function BookDetail() {
                   style={{ cursor: 'pointer', userSelect: 'none' }}
                   onClick={() => setShowName(true)}
                 >
-                  {showName ? (book.items[itemIndex].name || 'No Name') : '???'}
+                  {showName
+                    ? book.items[itemIndex].name || 'No Name'
+                    : (
+                      hintRevealedIndexes.length > 0
+                        ? getHintMasked(book.items[itemIndex].name, hintRevealedIndexes)
+                        : '???'
+                    )
+                  }
                 </span>
               ) : (
                 <span>{book.items[itemIndex].name || 'No Name'}</span>
@@ -434,16 +465,20 @@ function BookDetail() {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={() => setShowHint(true)}
-                  disabled={showHint}
+                  onClick={handleHintButton}
+                  disabled={
+                    (() => {
+                      const name = book.items[itemIndex].name || "";
+                      const chars = Array.from(name);
+                      const unrevealed = chars
+                        .map((_, idx) => idx)
+                        .filter(idx => !hintRevealedIndexes.includes(idx) && chars[idx] !== " " && chars[idx] !== "　");
+                      return unrevealed.length === 0;
+                    })()
+                  }
                 >
                   ヒント
                 </Button>
-                {showHint && (
-                  <Typography variant="body2" color="primary">
-                    最後の文字: {getHint(book.items[itemIndex].name)}
-                  </Typography>
-                )}
               </Stack>
             )}
           </Paper>
